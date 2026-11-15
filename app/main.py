@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
@@ -25,7 +25,7 @@ def health():
 
 @app.post("/readings", response_model=Reading, status_code=201)
 def add_reading(reading: ReadingIn):
-    stored = Reading(**reading.model_dump(), timestamp=datetime.now(timezone.utc))
+    stored = Reading(**reading.model_dump(), timestamp=datetime.now(UTC))
     readings.append(stored)
     return stored
 

@@ -29,3 +29,5 @@ python simulator.py
 | GET | /health | Health check |
 | POST | /readings | Add a reading: `{"sensor_id": "motor1", "temperature": 72.5}` |
 | GET | /readings | List the latest readings (`?limit=50`) |
+
+![CI](https://github.com/CarinSamer/sensor-monitor/actions/workflows/ci.yml/badge.svg)

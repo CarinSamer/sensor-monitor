@@ -1,17 +1,20 @@
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import delete
 
-from app.main import app, readings
+from app.database import ReadingRow, SessionLocal
+from app.main import app
 
 client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
 def clear_readings():
-    """Start every test with an empty readings list."""
-    readings.clear()
+    """Start every test with an empty table."""
+    with SessionLocal() as session:
+        session.execute(delete(ReadingRow))
+        session.commit()
     yield
-    readings.clear()
 
 
 def test_health():

@@ -31,3 +31,18 @@ python simulator.py
 | GET | /readings | List the latest readings (`?limit=50`) |
 
 ![CI](https://github.com/CarinSamer/sensor-monitor/actions/workflows/ci.yml/badge.svg)
+
+
+## Run with Docker
+
+```bash
+docker compose up --build
+```
+
+The API is available at http://127.0.0.1:8000/docs and data is stored in PostgreSQL.
+
+## Docker image
+
+```bash
+docker pull ghcr.io/CarinSamer/sensor-monitor:latest
+```

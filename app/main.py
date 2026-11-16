@@ -1,7 +1,12 @@
-from datetime import UTC, datetime
+from datetime import datetime
 
 from fastapi import FastAPI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import select
+
+from app.database import Base, ReadingRow, SessionLocal, engine
+
+Base.metadata.create_all(engine)
 
 app = FastAPI(title="Sensor Monitor")
 
@@ -12,10 +17,8 @@ class ReadingIn(BaseModel):
 
 
 class Reading(ReadingIn):
+    model_config = ConfigDict(from_attributes=True)
     timestamp: datetime
-
-
-readings: list[Reading] = []
 
 
 @app.get("/health")
@@ -25,11 +28,17 @@ def health():
 
 @app.post("/readings", response_model=Reading, status_code=201)
 def add_reading(reading: ReadingIn):
-    stored = Reading(**reading.model_dump(), timestamp=datetime.now(UTC))
-    readings.append(stored)
-    return stored
+    with SessionLocal() as session:
+        row = ReadingRow(**reading.model_dump())
+        session.add(row)
+        session.commit()
+        session.refresh(row)
+        return Reading.model_validate(row)
 
 
-@app.get("/readings")
+@app.get("/readings", response_model=list[Reading])
 def list_readings(limit: int = 50):
-    return readings[-limit:]
+    with SessionLocal() as session:
+        query = select(ReadingRow).order_by(ReadingRow.id.desc()).limit(limit)
+        rows = session.scalars(query).all()
+        return [Reading.model_validate(r) for r in reversed(rows)]

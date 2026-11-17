@@ -36,7 +36,7 @@ def health():
 
 @app.get("/version")
 def version():
-    return {"commit": os.environ.get("RENDER_GIT_COMMIT", "dev")}
+    return {"commit": os.environ.get("GIT_SHA", "dev")}
 
 
 @app.post(

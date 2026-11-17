@@ -2,6 +2,8 @@ services:
   db:
     image: postgres:16
     environment:
+      DATABASE_URL: postgresql+psycopg2://sensor:sensor_dev_password@db:5432/sensors
+      API_KEY: dev-key
       POSTGRES_USER: sensor
       POSTGRES_PASSWORD: sensor_dev_password
       POSTGRES_DB: sensors

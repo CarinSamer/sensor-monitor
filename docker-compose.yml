@@ -14,14 +14,17 @@ services:
       retries: 10
 
   api:
+  
     build: .
     ports:
       - "8000:8000"
     environment:
+      API_KEY: dev-key
       DATABASE_URL: postgresql+psycopg2://sensor:sensor_dev_password@db:5432/sensors
     depends_on:
       db:
         condition: service_healthy
+  
 
 volumes:
   pgdata:

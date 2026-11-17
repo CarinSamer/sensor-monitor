@@ -5,7 +5,7 @@ from sqlalchemy import delete
 from app.database import ReadingRow, SessionLocal
 from app.main import app
 
-client = TestClient(app)
+client = TestClient(app, headers={"X-API-Key": "dev-key"})
 
 
 @pytest.fixture(autouse=True)
@@ -57,3 +57,16 @@ def test_limit_parameter():
         client.post("/readings", json={"sensor_id": "motor1", "temperature": 60 + i})
     response = client.get("/readings", params={"limit": 3})
     assert len(response.json()) == 3
+
+def test_reject_missing_api_key():
+    anonymous = TestClient(app)
+    response = anonymous.post(
+        "/readings", json={"sensor_id": "motor1", "temperature": 50}
+    )
+    assert response.status_code == 401
+
+
+def test_version_endpoint():
+    response = client.get("/version")
+    assert response.status_code == 200
+    assert "commit" in response.json()

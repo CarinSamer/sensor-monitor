@@ -1,6 +1,8 @@
+import os
+import secrets
 from datetime import datetime
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 
@@ -9,6 +11,12 @@ from app.database import Base, ReadingRow, SessionLocal, engine
 Base.metadata.create_all(engine)
 
 app = FastAPI(title="Sensor Monitor")
+
+
+def check_key(x_api_key: str = Header(default="")):
+    expected = os.environ.get("API_KEY", "dev-key")
+    if not secrets.compare_digest(x_api_key.encode(), expected.encode()):
+        raise HTTPException(status_code=401, detail="Invalid API key")
 
 
 class ReadingIn(BaseModel):
@@ -26,7 +34,17 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/readings", response_model=Reading, status_code=201)
+@app.get("/version")
+def version():
+    return {"commit": os.environ.get("RENDER_GIT_COMMIT", "dev")}
+
+
+@app.post(
+    "/readings",
+    response_model=Reading,
+    status_code=201,
+    dependencies=[Depends(check_key)],
+)
 def add_reading(reading: ReadingIn):
     with SessionLocal() as session:
         row = ReadingRow(**reading.model_dump())

@@ -1,11 +1,12 @@
+import os
 import random
 import time
 
 import httpx
 
-URL = "http://127.0.0.1:8000/readings"
+URL = os.environ.get("API_URL", "http://127.0.0.1:8000/readings")
+HEADERS = {"X-API-Key": os.environ.get("API_KEY", "dev-key")}
 SENSORS = {"motor1": 70.0, "motor2": 65.0, "pump1": 55.0}  # base temperatures in °C
-
 while True:
     for sensor_id, base in SENSORS.items():
         payload = {

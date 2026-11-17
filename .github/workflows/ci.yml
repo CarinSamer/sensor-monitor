@@ -27,9 +27,16 @@ jobs:
       - name: Run tests
         run: python -m pytest
   docker:
-    needs: test
-    runs-on: ubuntu-latest
-    permissions:
+   - name: Build and push
+     uses: docker/build-push-action@v6
+     with:
+   context: . push: ${{ github.event_name != 'pull_request' }}
+   tags: ${{ steps.meta.outputs.tags }}
+  labels: ${{ steps.meta.outputs.labels }}
+  build-args: GIT_SHA=${{ github.sha }}   
+  needs: test
+  runs-on: ubuntu-latest
+   permissions:
       contents: read
       packages: write
     steps:

@@ -26,6 +26,7 @@ jobs:
 
       - name: Run tests
         run: python -m pytest
+
   docker:
     needs: test
     runs-on: ubuntu-latest
@@ -63,3 +64,4 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: GIT_SHA=${{ github.sha }}

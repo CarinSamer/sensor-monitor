@@ -11,4 +11,6 @@ RUN useradd --create-home appuser
 USER appuser
 
 EXPOSE 8000
+ARG GIT_SHA=dev
+ENV GIT_SHA=$GIT_SHA
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

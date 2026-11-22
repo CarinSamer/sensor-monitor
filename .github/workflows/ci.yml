@@ -65,3 +65,38 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: GIT_SHA=${{ github.sha }}
+
+  deploy:
+    needs: [test, docker]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Deploy to EC2 over SSH
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          install -m 600 /dev/null key.pem
+          echo "$SSH_KEY" > key.pem
+          SSH_OPTS="-i key.pem -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20"
+          scp $SSH_OPTS deploy/docker-compose.prod.yml ubuntu@"$HOST":~/sensor-monitor/docker-compose.yml
+          ssh $SSH_OPTS ubuntu@"$HOST" "cd ~/sensor-monitor && docker compose pull && docker compose up -d && docker image prune -f"
+
+      - name: Wait until the new version is live
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+        run: |
+          for i in $(seq 1 30); do
+            LIVE=$(curl -s --max-time 15 "$APP_URL/version" || true)
+            echo "Attempt $i: $LIVE"
+            if echo "$LIVE" | grep -q "$GITHUB_SHA"; then
+              echo "Deployed commit $GITHUB_SHA is live"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Deployment did not become live in time"
+          exit 1

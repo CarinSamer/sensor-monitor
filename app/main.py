@@ -1,8 +1,11 @@
 import os
 import secrets
+import time
 from datetime import datetime
 
 from fastapi import Depends, FastAPI, Header, HTTPException
+from prometheus_client import Counter, Gauge
+from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 
@@ -11,6 +14,19 @@ from app.database import Base, ReadingRow, SessionLocal, engine
 Base.metadata.create_all(engine)
 
 app = FastAPI(title="Sensor Monitor")
+Instrumentator().instrument(app).expose(app, include_in_schema=False)
+
+READINGS_TOTAL = Counter(
+    "sensor_readings_total", "Readings accepted by the API", ["sensor_id"]
+)
+LAST_TEMPERATURE = Gauge(
+    "sensor_temperature_celsius", "Latest temperature per sensor", ["sensor_id"]
+)
+LAST_READING_TIME = Gauge(
+    "sensor_last_reading_timestamp_seconds",
+    "Unix time of the latest reading per sensor",
+    ["sensor_id"],
+)
 
 
 def check_key(x_api_key: str = Header(default="")):
@@ -51,6 +67,9 @@ def add_reading(reading: ReadingIn):
         session.add(row)
         session.commit()
         session.refresh(row)
+        READINGS_TOTAL.labels(sensor_id=reading.sensor_id).inc()
+        LAST_TEMPERATURE.labels(sensor_id=reading.sensor_id).set(reading.temperature)
+        LAST_READING_TIME.labels(sensor_id=reading.sensor_id).set(time.time())
         return Reading.model_validate(row)
 
 

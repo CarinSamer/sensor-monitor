@@ -70,3 +70,10 @@ def test_version_endpoint():
     response = client.get("/version")
     assert response.status_code == 200
     assert "commit" in response.json()
+    
+def test_metrics_endpoint_exposes_sensor_metrics():
+    client.post("/readings", json={"sensor_id": "motor1", "temperature": 61.5})
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    assert "sensor_readings_total" in response.text
+    assert "http_requests_total" in response.text

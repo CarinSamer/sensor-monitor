@@ -1,0 +1,18 @@
+groups:
+  - name: sensor-alerts
+    rules:
+      - alert: NoSensorReadings
+        expr: (time() - max(sensor_last_reading_timestamp_seconds) > 120) or absent(sensor_last_reading_timestamp_seconds)
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No sensor readings received for more than 2 minutes"
+
+      - alert: ApiDown
+        expr: up{job="sensor-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Prometheus cannot reach the API"
